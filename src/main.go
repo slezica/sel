@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -63,7 +64,7 @@ func doTheThing(splitter *Splitter, joiner *Joiner, selectors []*Selector) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for scanner.Scan() {
-		line := scanner.Text()
+		line := strings.TrimSpace(scanner.Text())
 		fields := splitter.Split(line)
 
 		var selectedFields []string

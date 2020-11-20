@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+const outOfBounds = -1
+
 // Selector can select fields from a slice using human-friendly indexes, negative and positive
 type Selector struct {
 	start int
@@ -20,13 +22,13 @@ type ParseSelectorError struct {
 
 // ParseSelector creates a Selector from a user-provided string
 func ParseSelector(expr string) (*Selector, error) {
-	exprParts := strings.Split(expr, ":")
-
-	if len(exprParts) == 0 {
-		return &Selector{start: 0, end: 0}, nil
+	if expr == "" {
+		return nil, NewParseSelectorError(expr)
 	}
 
-	start, err := strconv.Atoi(exprParts[0])
+	exprParts := strings.Split(expr, ":")
+
+	start, err := parseIndex(exprParts[0], 1)
 	if err != nil {
 		return nil, NewParseSelectorError(expr)
 	}
@@ -35,7 +37,7 @@ func ParseSelector(expr string) (*Selector, error) {
 		return &Selector{start: start, end: start}, nil
 	}
 
-	end, err := strconv.Atoi(exprParts[1])
+	end, err := parseIndex(exprParts[1], math.MaxInt32)
 	if err != nil {
 		return nil, NewParseSelectorError(expr)
 	}
@@ -54,8 +56,8 @@ func (s *Selector) Select(fields []string) []string {
 	low := adjustStartIndex(s.start, fieldCount)
 	high := adjustEndIndex(s.end, fieldCount)
 
-	if low == high {
-		return []string{fields[low]}
+	if low == outOfBounds || high == outOfBounds || low > high {
+		return []string{}
 	}
 
 	return fields[low:high]
@@ -70,45 +72,61 @@ func (e *ParseSelectorError) Error() string {
 	return fmt.Sprintf("Invalid selector '%s'", e.Expr)
 }
 
+func parseIndex(expr string, defaultValue int) (int, error) {
+	if len(expr) == 0 {
+		return defaultValue, nil
+	}
+
+	value, err := strconv.Atoi(expr)
+
+	if value == 0 || err != nil {
+		return -1, fmt.Errorf("Invalid index %s (cause %v)", expr, err)
+	}
+
+	return value, nil
+}
+
 func adjustStartIndex(index int, fieldCount int) int {
-	// NOTE:
-	// This function is a little redundant, but separating cases helps me reason about them.
+	if index == 0 {
+		panic("Internal error: invalid Selector was built")
+	}
 
-	if index == 0 || fieldCount == 0 {
-		return 0
+	if fieldCount == 0 {
+		return outOfBounds // no possible selection for 0 fields, anything is out of bounds
 
-	} else if index >= fieldCount {
-		return fieldCount - 1
+	} else if index > fieldCount {
+		return outOfBounds // selection starts after fields end, this is out of bounds
 
 	} else if index < -fieldCount {
-		return 0
+		return 0 // selection starts before fields do, begin at the first index
 
 	} else if index < 0 {
-		return (fieldCount - 1) - (abs(index) - 1)
+		return (fieldCount - 1) - (abs(index) - 1) // valid negative selection start, count from the last index
 
 	} else {
-		return index - 1
+		return index - 1 // valid positive selection start, count from the first index
 	}
 }
 
 func adjustEndIndex(index int, fieldCount int) int {
-	// NOTE:
-	// This function is a little redundant, but separating cases helps me reason about them.
+	if index == 0 {
+		panic("Internal error: invalid Selector was built")
+	}
 
-	if index == 0 || fieldCount == 0 {
-		return 0
-
-	} else if index >= fieldCount {
-		return fieldCount
+	if fieldCount == 0 {
+		return outOfBounds // no possible selection for 0 fields, anything is out of bounds
 
 	} else if index < -fieldCount {
-		return 0
+		return outOfBounds // selection ends before fields begin, this is out of bounds
+
+	} else if index >= fieldCount {
+		return fieldCount // selection ends after fields do, end at the last index
 
 	} else if index < 0 {
-		return fieldCount - abs(index) + 1
+		return fieldCount - abs(index) + 1 // valid negative selection end, count from the last index (inclusive)
 
 	} else {
-		return index
+		return index // valid positive selection end, count from the first index (inclusive)
 	}
 }
 

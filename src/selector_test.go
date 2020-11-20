@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 )
 
@@ -12,12 +13,17 @@ func TestParse(t *testing.T) {
 	tryParseSelector(t, "-1:1", false)
 	tryParseSelector(t, "-1:-1", false)
 
+	tryParseSelector(t, "1:", false)
+	tryParseSelector(t, ":1", false)
+	tryParseSelector(t, ":-1", false)
+	tryParseSelector(t, "1:", false)
+	tryParseSelector(t, "-1:", false)
+
 	tryParseSelector(t, "", true)
-	tryParseSelector(t, "1:", true)
-	tryParseSelector(t, ":1", true)
-	tryParseSelector(t, ":-1", true)
-	tryParseSelector(t, "1:", true)
-	tryParseSelector(t, "-1:", true)
+	tryParseSelector(t, "0", true)
+	tryParseSelector(t, "0:0", true)
+	tryParseSelector(t, "0:", true)
+	tryParseSelector(t, ":0", true)
 	tryParseSelector(t, "hello", true)
 	tryParseSelector(t, "hello", true)
 	tryParseSelector(t, "hello:", true)
@@ -25,76 +31,255 @@ func TestParse(t *testing.T) {
 	tryParseSelector(t, ":bye", true)
 }
 
-func TestSelect(t *testing.T) {
-	// NOTE:
-	// This is only testing the case where start == end. Other behavior is tested elsehwere in this file.
+func TestSelectEmpty(t *testing.T) {
+	st := newSelectorTester(t, []string{})
 
-	selector := Selector{start: 1, end: 1}
-	fields := []string{"a", "b", "c"}
-	result := selector.Select(fields)
+	// st.try("-2:-2", []string{})
+	st.try("-2:-1", []string{})
+	st.try("-2:1", []string{})
+	st.try("-2:2", []string{})
 
-	if len(result) != 1 || result[0] != "a" {
-		t.Errorf("Expected 'a' when selecting 1:1 from 'a b c', got %v", result)
+	st.try("-1:-2", []string{})
+	st.try("-1:-1", []string{})
+	st.try("-1:1", []string{})
+	st.try("-1:2", []string{})
+
+	st.try("1:-2", []string{})
+	st.try("1:-1", []string{})
+	st.try("1:1", []string{})
+	st.try("1:2", []string{})
+
+	st.try("2:-2", []string{})
+	st.try("2:-1", []string{})
+	st.try("2:1", []string{})
+	st.try("2:2", []string{})
+
+	st.try(":1", []string{})
+	st.try(":2", []string{})
+	st.try("1:", []string{})
+	st.try("2:", []string{})
+
+	st.try(":-1", []string{})
+	st.try(":-2", []string{})
+	st.try("-1:", []string{})
+	st.try("-2:", []string{})
+
+	st.try(":", []string{})
+}
+
+func TestSelect1(t *testing.T) {
+	st := newSelectorTester(t, []string{"a"})
+
+	st.try("-2:-2", []string{})
+	st.try("-2:-1", []string{"a"})
+	st.try("-2:1", []string{"a"})
+	st.try("-2:2", []string{"a"})
+	st.try("-2:2", []string{"a"})
+
+	st.try("-1:-2", []string{})
+	st.try("-1:-1", []string{"a"})
+	st.try("-1:1", []string{"a"})
+	st.try("-1:2", []string{"a"})
+
+	st.try("1:-2", []string{})
+	st.try("1:-1", []string{"a"})
+	st.try("1:1", []string{"a"})
+	st.try("1:2", []string{"a"})
+
+	st.try("2:-2", []string{})
+	st.try("2:-1", []string{})
+	st.try("2:1", []string{})
+	st.try("2:2", []string{})
+
+	st.try(":1", []string{"a"})
+	st.try(":2", []string{"a"})
+	st.try("1:", []string{"a"})
+	st.try("2:", []string{})
+
+	st.try(":-1", []string{"a"})
+	st.try(":-2", []string{})
+	st.try("-1:", []string{"a"})
+	st.try("-2:", []string{"a"})
+
+	st.try(":", []string{"a"})
+}
+
+func TestSelect2(t *testing.T) {
+	st := newSelectorTester(t, []string{"a", "b"})
+
+	st.try("-3:-2", []string{"a"})
+	st.try("-3:-1", []string{"a", "b"})
+	st.try("-3:1", []string{"a"})
+	st.try("-3:2", []string{"a", "b"})
+
+	st.try("-2:-3", []string{})
+	st.try("-2:-2", []string{"a"})
+	st.try("-2:-1", []string{"a", "b"})
+	st.try("-2:1", []string{"a"})
+	st.try("-2:2", []string{"a", "b"})
+	st.try("-2:3", []string{"a", "b"})
+
+	st.try("-1:-3", []string{})
+	st.try("-1:-2", []string{})
+	st.try("-1:-1", []string{"b"})
+	st.try("-1:1", []string{})
+	st.try("-1:2", []string{"b"})
+	st.try("-1:3", []string{"b"})
+
+	st.try("1:-3", []string{})
+	st.try("1:-2", []string{"a"})
+	st.try("1:-1", []string{"a", "b"})
+	st.try("1:1", []string{"a"})
+	st.try("1:2", []string{"a", "b"})
+	st.try("1:3", []string{"a", "b"})
+
+	st.try("2:-3", []string{})
+	st.try("2:-2", []string{})
+	st.try("2:-1", []string{"b"})
+	st.try("2:1", []string{})
+	st.try("2:2", []string{"b"})
+	st.try("2:3", []string{"b"})
+
+	st.try("3:-3", []string{})
+	st.try("3:-2", []string{})
+	st.try("3:-1", []string{})
+	st.try("3:1", []string{})
+	st.try("3:2", []string{})
+	st.try("3:3", []string{})
+
+	st.try(":1", []string{"a"})
+	st.try(":2", []string{"a", "b"})
+	st.try(":3", []string{"a", "b"})
+	st.try("1:", []string{"a", "b"})
+	st.try("2:", []string{"b"})
+	st.try("3:", []string{})
+
+	st.try(":-1", []string{"a", "b"})
+	st.try(":-2", []string{"a"})
+	st.try(":-3", []string{})
+	st.try("-1:", []string{"b"})
+	st.try("-2:", []string{"a", "b"})
+	st.try("-3:", []string{"a", "b"})
+
+	st.try(":", []string{"a", "b"})
+}
+
+func TestSelect3(t *testing.T) {
+	st := newSelectorTester(t, []string{"a", "b", "c"})
+
+	st.try("-4:-4", []string{})
+	st.try("-4:-3", []string{"a"})
+	st.try("-4:-2", []string{"a", "b"})
+	st.try("-4:-1", []string{"a", "b", "c"})
+	st.try("-4:1", []string{"a"})
+	st.try("-4:2", []string{"a", "b"})
+	st.try("-4:3", []string{"a", "b", "c"})
+	st.try("-4:4", []string{"a", "b", "c"})
+
+	st.try("-3:-4", []string{})
+	st.try("-3:-3", []string{"a"})
+	st.try("-3:-2", []string{"a", "b"})
+	st.try("-3:-1", []string{"a", "b", "c"})
+	st.try("-3:1", []string{"a"})
+	st.try("-3:2", []string{"a", "b"})
+	st.try("-3:3", []string{"a", "b", "c"})
+	st.try("-3:4", []string{"a", "b", "c"})
+
+	st.try("-2:-4", []string{})
+	st.try("-2:-3", []string{})
+	st.try("-2:-2", []string{"b"})
+	st.try("-2:-1", []string{"b", "c"})
+	st.try("-2:1", []string{})
+	st.try("-2:2", []string{"b"})
+	st.try("-2:3", []string{"b", "c"})
+	st.try("-2:4", []string{"b", "c"})
+
+	st.try("-1:-4", []string{})
+	st.try("-1:-3", []string{})
+	st.try("-1:-2", []string{})
+	st.try("-1:-1", []string{"c"})
+	st.try("-1:1", []string{})
+	st.try("-1:2", []string{})
+	st.try("-1:3", []string{"c"})
+	st.try("-1:4", []string{"c"})
+
+	st.try("1:-4", []string{})
+	st.try("1:-3", []string{"a"})
+	st.try("1:-2", []string{"a", "b"})
+	st.try("1:-1", []string{"a", "b", "c"})
+	st.try("1:1", []string{"a"})
+	st.try("1:2", []string{"a", "b"})
+	st.try("1:3", []string{"a", "b", "c"})
+	st.try("1:4", []string{"a", "b", "c"})
+
+	st.try("2:-4", []string{})
+	st.try("2:-3", []string{})
+	st.try("2:-2", []string{"b"})
+	st.try("2:-1", []string{"b", "c"})
+	st.try("2:1", []string{})
+	st.try("2:2", []string{"b"})
+	st.try("2:3", []string{"b", "c"})
+	st.try("2:4", []string{"b", "c"})
+
+	st.try("3:-4", []string{})
+	st.try("3:-3", []string{})
+	st.try("3:-2", []string{})
+	st.try("3:-1", []string{"c"})
+	st.try("3:1", []string{})
+	st.try("3:2", []string{})
+	st.try("3:3", []string{"c"})
+	st.try("3:4", []string{"c"})
+
+	st.try("4:-4", []string{})
+	st.try("4:-3", []string{})
+	st.try("4:-2", []string{})
+	st.try("4:-1", []string{})
+	st.try("4:1", []string{})
+	st.try("4:2", []string{})
+	st.try("4:3", []string{})
+	st.try("4:4", []string{})
+
+	st.try(":1", []string{"a"})
+	st.try(":2", []string{"a", "b"})
+	st.try(":3", []string{"a", "b", "c"})
+	st.try(":4", []string{"a", "b", "c"})
+	st.try("1:", []string{"a", "b", "c"})
+	st.try("2:", []string{"b", "c"})
+	st.try("3:", []string{"c"})
+	st.try("4:", []string{})
+
+	st.try(":-1", []string{"a", "b", "c"})
+	st.try(":-2", []string{"a", "b"})
+	st.try(":-3", []string{"a"})
+	st.try(":-4", []string{})
+	st.try("-1:", []string{"c"})
+	st.try("-2:", []string{"b", "c"})
+	st.try("-3:", []string{"a", "b", "c"})
+	st.try("-4:", []string{"a", "b", "c"})
+
+	st.try(":", []string{"a", "b", "c"})
+}
+
+type SelectorTester struct {
+	t      *testing.T
+	fields []string
+}
+
+func newSelectorTester(t *testing.T, fields []string) *SelectorTester {
+	return &SelectorTester{t, fields}
+}
+
+func (s *SelectorTester) try(expr string, expectedFields []string) {
+	selector, err := ParseSelector(expr)
+	if err != nil {
+		s.t.Error(err)
+		return
 	}
-}
 
-func TestAdjustStart(t *testing.T) {
-	tryAdjustStart(t, -1, 0, 0)
-	tryAdjustStart(t, 0, 0, 0)
-	tryAdjustStart(t, 1, 0, 0)
+	actualFields := selector.Select(s.fields)
 
-	tryAdjustStart(t, -2, 1, 0)
-	tryAdjustStart(t, -1, 1, 0)
-	tryAdjustStart(t, 0, 1, 0)
-	tryAdjustStart(t, 1, 1, 0)
-	tryAdjustStart(t, 2, 1, 0)
-
-	tryAdjustStart(t, -1, 3, 2)
-	tryAdjustStart(t, -2, 3, 1)
-	tryAdjustStart(t, -3, 3, 0)
-	tryAdjustStart(t, -4, 3, 0)
-	tryAdjustStart(t, 0, 3, 0)
-	tryAdjustStart(t, 1, 3, 0)
-	tryAdjustStart(t, 2, 3, 1)
-	tryAdjustStart(t, 3, 3, 2)
-	tryAdjustStart(t, 4, 3, 2)
-}
-
-func TestAdjustEnd(t *testing.T) {
-	tryAdjustEnd(t, -1, 0, 0)
-	tryAdjustEnd(t, 0, 0, 0)
-	tryAdjustEnd(t, 1, 0, 0)
-
-	tryAdjustEnd(t, -2, 1, 0)
-	tryAdjustEnd(t, -1, 1, 1)
-	tryAdjustEnd(t, 0, 1, 0)
-	tryAdjustEnd(t, 1, 1, 1)
-	tryAdjustEnd(t, 2, 1, 1)
-
-	tryAdjustEnd(t, -1, 3, 3)
-	tryAdjustEnd(t, -2, 3, 2)
-	tryAdjustEnd(t, -3, 3, 1)
-	tryAdjustEnd(t, -4, 3, 0)
-	tryAdjustEnd(t, 0, 3, 0)
-	tryAdjustEnd(t, 1, 3, 1)
-	tryAdjustEnd(t, 2, 3, 2)
-	tryAdjustEnd(t, 3, 3, 3)
-	tryAdjustEnd(t, 4, 3, 3)
-}
-
-func tryAdjustStart(t *testing.T, start int, fieldCount int, expected int) {
-	actual := adjustStartIndex(start, fieldCount)
-
-	if actual != expected {
-		t.Errorf("Start index %d of %d adjusted to %d expecting %d", start, fieldCount, actual, expected)
-	}
-}
-
-func tryAdjustEnd(t *testing.T, end int, fieldCount int, expected int) {
-	actual := adjustEndIndex(end, fieldCount)
-
-	if actual != expected {
-		t.Errorf("End index %d of %d adjusted to %d expecting %d", end, fieldCount, actual, expected)
+	if !reflect.DeepEqual(actualFields, expectedFields) {
+		s.t.Errorf("Expression '%s' selected from %v fields %v expecting %v", expr, s.fields, actualFields, expectedFields)
 	}
 }
 
