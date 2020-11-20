@@ -33,7 +33,7 @@ func main() {
 
 	for _, selectorExpr := range selectorExprs {
 		selector, err := ParseSelector(selectorExpr)
-		check(err, "Invalid selector: %s", selectorExpr)
+		check(err, "Invalid selector: '%s'", selectorExpr)
 
 		selectors = append(selectors, selector)
 	}
@@ -47,6 +47,11 @@ func classifyArgs(args []string) ([]string, []string) {
 	var selectorExprs []string
 
 	for _, arg := range args {
+		if !strings.HasPrefix(arg, "-") {
+			selectorExprs = append(flags, arg)
+			continue
+		}
+
 		// Between this and main(), we're parsing selectors twice. Not optimal, but no big deal.
 		_, err := ParseSelector(arg)
 
@@ -80,5 +85,6 @@ func doTheThing(splitter *Splitter, joiner *Joiner, selectors []*Selector) {
 func check(err error, message string, params ...interface{}) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", fmt.Sprintf(message, params...))
+		os.Exit(1)
 	}
 }
