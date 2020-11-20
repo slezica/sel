@@ -15,6 +15,8 @@ func main() {
 	joinExpr := flagSet.String("join", " ", "String to join selected fields")
 	help := flagSet.Bool("help", false, "Show help")
 
+	// Before we call `flagSet.Parse`, we need to separate selectors from flags ourselves. This is because negative
+	// selectors (such as "-1") look like invalid flags to the implementation, and there's no option to avoid that:
 	flags, selectorExprs := classifyArgs(os.Args[1:])
 	flagSet.Parse(flags)
 
@@ -47,12 +49,13 @@ func classifyArgs(args []string) ([]string, []string) {
 	var selectorExprs []string
 
 	for _, arg := range args {
+		// If this argument is obviously not a flag, just add it to the selector expression list:
 		if !strings.HasPrefix(arg, "-") {
 			selectorExprs = append(flags, arg)
 			continue
 		}
 
-		// Between this and main(), we're parsing selectors twice. Not optimal, but no big deal.
+		// Now this could be a flag or a negative selector. Try to parse it, see what happens:
 		_, err := ParseSelector(arg)
 
 		if err != nil {
@@ -60,6 +63,11 @@ func classifyArgs(args []string) ([]string, []string) {
 		} else {
 			selectorExprs = append(selectorExprs, arg)
 		}
+
+		// NOTE:
+		// For the negative selector vs flag case, we're running `ParseSelector` twice (will also happe in `main`). Not
+		// ideal, but not a problem that merits additional complexity. I blame the `flags` module for forcing me into this
+		// position. Yeah, that's it. Not my fault.
 	}
 
 	return flags, selectorExprs

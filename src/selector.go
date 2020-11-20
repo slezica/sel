@@ -23,6 +23,7 @@ type ParseSelectorError struct {
 // ParseSelector creates a Selector from a user-provided string
 func ParseSelector(expr string) (*Selector, error) {
 	if expr == "" {
+		// An empty string is always an invalid selector:
 		return nil, NewParseSelectorError(expr)
 	}
 
@@ -34,6 +35,7 @@ func ParseSelector(expr string) (*Selector, error) {
 	}
 
 	if len(exprParts) == 1 {
+		// This is a single-field selector (such as "1"), which we interpret as 1-field range:
 		return &Selector{start: start, end: start}, nil
 	}
 
@@ -43,9 +45,11 @@ func ParseSelector(expr string) (*Selector, error) {
 	}
 
 	if len(exprParts) == 2 {
+		// This is a range selector (such as "1:2"):
 		return &Selector{start: start, end: end}, nil
 	}
 
+	// If we reached this point, this selector has more than one ":", which is always invalid:
 	return nil, NewParseSelectorError(expr)
 }
 
@@ -53,6 +57,7 @@ func ParseSelector(expr string) (*Selector, error) {
 func (s *Selector) Select(fields []string) []string {
 	fieldCount := len(fields)
 
+	// User-provided indices can be negative or (in some cases) out of bounds, we adjust that to array indices:
 	low := adjustStartIndex(s.start, fieldCount)
 	high := adjustEndIndex(s.end, fieldCount)
 
@@ -74,6 +79,7 @@ func (e *ParseSelectorError) Error() string {
 
 func parseIndex(expr string, defaultValue int) (int, error) {
 	if len(expr) == 0 {
+		// This is the case for either part of an unbounded selector, such as "1:", ":-2" or the ":" full range:
 		return defaultValue, nil
 	}
 
@@ -88,7 +94,7 @@ func parseIndex(expr string, defaultValue int) (int, error) {
 
 func adjustStartIndex(index int, fieldCount int) int {
 	if index == 0 {
-		panic("Internal error: invalid Selector was built")
+		panic("Internal error: invalid Selector was built") // we should not have reached this point
 	}
 
 	if fieldCount == 0 {
@@ -110,7 +116,7 @@ func adjustStartIndex(index int, fieldCount int) int {
 
 func adjustEndIndex(index int, fieldCount int) int {
 	if index == 0 {
-		panic("Internal error: invalid Selector was built")
+		panic("Internal error: invalid Selector was built") // we should not have reached this point
 	}
 
 	if fieldCount == 0 {
