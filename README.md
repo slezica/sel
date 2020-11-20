@@ -55,8 +55,16 @@ You can use negative indices to select fields counting from the end:
     $ echo "a b c d e" | sel 2:-2
     b c d
 
+This includes unbounded ranges:
+
     $ echo "a b c d e" | sel 3:
     c d e
+
+    $ echo "a b c d e" | sel :2
+    a b
+
+    $ echo "a b c d e" | sel :
+    a b c d e
 
 
 #### Splitting fields using a custom separator
