@@ -1,8 +1,5 @@
 # sel
 
-**NOTE**: I'm the process of replacing https://github.com/slezica/sel-python-old with this Golang implementation, but
-it's still buggy and incomplete. Go there for a more functional tool.
-
 `sel` is an inline field selection and table transformation tool
 that aims to replace `cut`.
 
