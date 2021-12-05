@@ -65,7 +65,7 @@ func classifyArgs(args []string) ([]string, []string) {
 		}
 
 		// NOTE:
-		// For the negative selector vs flag case, we're running `ParseSelector` twice (will also happe in `main`). Not
+		// For the negative selector vs flag case, we're running `ParseSelector` twice (will also happen in `main`). Not
 		// ideal, but not a problem that merits additional complexity. I blame the `flags` module for forcing me into this
 		// position. Yeah, that's it. Not my fault.
 	}
