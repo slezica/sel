@@ -27,7 +27,7 @@ func ParseCli() *Cli {
 
 	if *help {
 		flagSet.PrintDefaults()
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	splitter, err := ParseSplitter(*splitExpr)
