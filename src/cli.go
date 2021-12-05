@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -11,6 +12,45 @@ type Cli struct {
 	splitter  *Splitter
 	joiner    *Joiner
 	selectors []*Selector
+}
+
+const dashPlaceholderSymbol = "௸"
+
+func ParseCli2(args []string) *Cli {
+	flagSet := flag.NewFlagSet("sel", flag.ExitOnError)
+
+	splitExpr := flagSet.String("split", "\\s+", "Regex to split fields")
+	joinExpr := flagSet.String("join", " ", "String to join selected fields")
+	help := flagSet.Bool("help", false, "Show help")
+
+	transformArgsBeforeParse(args)
+
+	flagSet.Parse(args)
+	selectorArgs := flagSet.Args()
+
+	// transformArgsAfterParse(selectorArgs)
+
+	if *help {
+		flagSet.PrintDefaults()
+		os.Exit(1)
+	}
+
+	splitter, err := ParseSplitter(*splitExpr)
+	check(err, "Invalid regex to split fields: %s", *splitExpr)
+
+	joiner, err := ParseJoiner(*joinExpr)
+	check(err, "Invalid string to join fields: %s", *joinExpr)
+
+	var selectors []*Selector
+
+	for _, selectorExpr := range selectorArgs {
+		selector, err := ParseSelector(selectorExpr)
+		check(err, "Invalid selector: '%s'", selectorExpr)
+
+		selectors = append(selectors, selector)
+	}
+
+	return &Cli{splitter, joiner, selectors}
 }
 
 func ParseCli(args []string) *Cli {
@@ -76,6 +116,20 @@ func classifyArgs(args []string) ([]string, []string) {
 	}
 
 	return flags, selectorExprs
+}
+
+func transformArgsBeforeParse(args []string) {
+	negativeSelectorRe := regexp.MustCompile("^-([0-9:]+)$")
+
+	for i, arg := range args {
+		args[i] = negativeSelectorRe.ReplaceAllString(arg, dashPlaceholderSymbol+"$1")
+	}
+}
+
+func transformArgsAfterParse(args []string) {
+	for i, arg := range args {
+		args[i] = strings.ReplaceAll(arg, dashPlaceholderSymbol, "-")
+	}
 }
 
 func check(err error, message string, params ...interface{}) {

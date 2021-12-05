@@ -6,7 +6,7 @@ import (
 )
 
 func TestAll(t *testing.T) {
-	cli := ParseCli([]string{"1", "-join=a", "2", "-split=\\t", "3"})
+	cli := ParseCli([]string{"-join", "a", "-split", "\\t", "3"})
 
 	if cli.joiner.Delim != "a" {
 		t.Fatalf("expected Joiner.Delim 'a', not '%s'", cli.joiner.Delim)
@@ -56,10 +56,10 @@ func TestJoinFlag(t *testing.T) {
 }
 
 func TestSelectors(t *testing.T) {
-	selectorExprs := []string{"1", ":2", "3:", "4:5"}
-	expectedRanges := [][]int{{1, 1}, {1, 2}, {3, math.MaxInt32}, {4, 5}}
+	selectorExprs := []string{"1", ":2", "3:", "4:5", "-1", ":-2"}
+	expectedRanges := [][]int{{1, 1}, {1, 2}, {3, math.MaxInt32}, {4, 5}, {-1, -1}, {1, -2}}
 
-	cli := ParseCli(selectorExprs)
+	cli := ParseCli2(selectorExprs)
 
 	for i, selector := range cli.selectors {
 		if selector.start != expectedRanges[i][0] || selector.end != expectedRanges[i][1] {
