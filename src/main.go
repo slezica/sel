@@ -51,7 +51,7 @@ func classifyArgs(args []string) ([]string, []string) {
 	for _, arg := range args {
 		// If this argument is obviously not a flag, just add it to the selector expression list:
 		if !strings.HasPrefix(arg, "-") {
-			selectorExprs = append(flags, arg)
+			selectorExprs = append(selectorExprs, arg)
 			continue
 		}
 
