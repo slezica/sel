@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	flagSet := flag.NewFlagSet("main", flag.ExitOnError)
+	flagSet := flag.NewFlagSet("sel", flag.ExitOnError)
 
 	splitExpr := flagSet.String("split", "\\s+", "Regex to split fields")
 	joinExpr := flagSet.String("join", " ", "String to join selected fields")
