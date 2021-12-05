@@ -13,7 +13,7 @@ type Cli struct {
 	selectors []*Selector
 }
 
-func ParseCli() *Cli {
+func ParseCli(args []string) *Cli {
 	flagSet := flag.NewFlagSet("sel", flag.ExitOnError)
 
 	splitExpr := flagSet.String("split", "\\s+", "Regex to split fields")
@@ -22,7 +22,7 @@ func ParseCli() *Cli {
 
 	// Before we call `flagSet.Parse`, we need to separate selectors from flags ourselves. This is because negative
 	// selectors (such as "-1") look like invalid flags to the implementation, and there's no option to avoid that:
-	flags, selectorExprs := classifyArgs(os.Args[1:])
+	flags, selectorExprs := classifyArgs(args)
 	flagSet.Parse(flags)
 
 	if *help {

@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	cli := ParseCli()
+	cli := ParseCli(os.Args[1:])
 
 	scanner := bufio.NewScanner(os.Stdin)
 
