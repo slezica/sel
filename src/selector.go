@@ -74,7 +74,7 @@ func NewParseSelectorError(expr string) *ParseSelectorError {
 }
 
 func (e *ParseSelectorError) Error() string {
-	return fmt.Sprintf("Invalid selector '%s'", e.Expr)
+	return fmt.Sprintf("invalid selector '%s'", e.Expr)
 }
 
 func parseIndex(expr string, defaultValue int) (int, error) {
@@ -86,7 +86,7 @@ func parseIndex(expr string, defaultValue int) (int, error) {
 	value, err := strconv.Atoi(expr)
 
 	if value == 0 || err != nil {
-		return -1, fmt.Errorf("Invalid index %s (cause %v)", expr, err)
+		return -1, fmt.Errorf("invalid index %s (cause %v)", expr, err)
 	}
 
 	return value, nil
