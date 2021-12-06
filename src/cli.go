@@ -20,14 +20,18 @@ func ParseCli(args []string) *Cli {
 	joinExpr := flagSet.String("join", " ", "String to join selected fields")
 	help := flagSet.Bool("help", false, "Show help")
 
+	flagSet.Usage = func() {
+		fmt.Fprintln(os.Stderr, usageString)
+	}
+
 	// Before we call `flagSet.Parse`, we need to separate selectors from flags ourselves. This is because negative
 	// selectors (such as "-1") look like invalid flags to the implementation, and there's no option to avoid that:
 	flags, selectorExprs := classifyArgs(args)
 	flagSet.Parse(flags)
 
 	if *help {
-		flagSet.PrintDefaults()
-		os.Exit(1)
+		flagSet.Usage()
+		os.Exit(0)
 	}
 
 	splitter, err := ParseSplitter(*splitExpr)
@@ -84,3 +88,13 @@ func check(err error, message string, params ...interface{}) {
 		os.Exit(1)
 	}
 }
+
+var usageString = strings.TrimSpace(`
+Usage:
+    sel [-help] [-join=<delim>] [-split=<regex>] [selector...]
+
+Arguments:
+    -help            Show usage information
+    -join=<delim>    Join selected fields using <delim> (default: ' ')
+    -split=<regex>   Split a line into fields using <regex> (default: '\s+')
+`) + "\n"
