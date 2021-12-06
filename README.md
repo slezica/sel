@@ -73,12 +73,12 @@ By default, `sel` splits the input on whitespace. It can also use a custom regul
     3192,MitM
     3255,Alice
 
-    $ cat users.csv | sel --split , 1
+    $ cat users.csv | sel -split=, 1
     1241
     3192
     3255
     
-    $ echo 1a2b3c4d | sel --split [a-z] 2:3
+    $ echo 1a2b3c4d | sel -split=[a-z] 2:3
     2 3
 
 
@@ -86,5 +86,5 @@ By default, `sel` splits the input on whitespace. It can also use a custom regul
 
 By default, `sel` prints selected fields separated by a single space character. You can change this:
 
-    $ echo a b c | sel --join - 2 3
+    $ echo a b c | sel -join=- 2 3
     b-c
